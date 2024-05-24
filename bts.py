@@ -1,256 +1,245 @@
-from typing import Any
+from typing import Optional
 
 class Node:
     def __init__(self, key: int) -> None:
         self.key = key
-        self.left = None
-        self.right = None
-        self.parent = None
+        self.left: Optional[Node] = None
+        self.right: Optional[Node] = None
+        self.parent: Optional[Node] = None
 
-    def __lt__(self, other):
-        if other is None:
-            return False
+    def __lt__(self, other: 'Node') -> bool:
         return self.key < other.key
     
-    def __gt__(self, other):
-        if other is None:
-            return False
+    def __gt__(self, other: 'Node') -> bool:
         return self.key > other.key
     
-    def __eq__(self, other):
-        if other is None:
-            return False
+    def __eq__(self, other: 'Node') -> bool:
         return self.key == other.key
-    
-    def __ge__(self, other):
-        if other is None:
-            return False
-        return self.key >= other.key
-    
-    def __le__(self, other):
-        if other is None:
-            return False
-        return self.key <= other.key
 
 class BST:
     def __init__(self) -> None:
-        self.root = None
+        self.root: Optional[Node] = None
 
     def isEmpty(self) -> bool:
-        #Method returns true if the root is none
         return self.root is None
 
     def insert(self, key: int) -> Node:
-       #Create a new node and pass its key value
-       newNode = Node(key)
-
-       #write a conditional statement to set new node as root if tree is empty
-       if self.isEmpty():
-           self.root = newNode
-       else:
-           #Else, it recursively insert the new node into the three
-            self.insertRecursive(self.root, newNode)
-
-        #Return the newly inserted node
-       return newNode 
-     
-    #---------------------------------------------------------------------------------------------------------------------------
-    #Implementing a recurrsive helper function for insertion
-    def insertRecursive(self, currentNode: Node, newNode: Node) -> None:
-
-        #Implementing a conditional statement when the new code is less than the current node to the LHS
-        if newNode < currentNode:
-
-            #if there is no node in the LHS set the new node to LHS, else create a new node by repeating recursive function
-            if currentNode.left is None:
-                currentNode.left = newNode
-                newNode.parent = currentNode
+        new_node = Node(key)
+        if self.isEmpty():
+            self.root = new_node
+            return new_node
+        
+        current = self.root
+        parent = None
+        
+        while current is not None:
+            parent = current
+            if new_node < current:
+                current = current.left
             else:
-                self.insertRecursive(currentNode.left, newNode)
-
-        #Implement a conditional statement for when newNode >= current node        
+                current = current.right
+        
+        new_node.parent = parent
+        
+        if new_node < parent:
+            parent.left = new_node
         else:
-            #if the RHS of current node is none then set newNode as current RHS
-            if currentNode.right is None:
-                currentNode.right = newNode
-                newNode.parent = currentNode
+            parent.right = new_node
+        
+        return new_node
+
+    def search(self, key: int) -> Optional[Node]:
+        current = self.root
+        while current is not None and current.key != key:
+            if key < current.key:
+                current = current.left
             else:
-                self.insertRecursive(currentNode.right, newNode)
-    #--------------------------------------------------------------------------------------------------------------------------------------
-        
-    def search(self, key: int) -> Node:
-        return self.searchRecursive(self.root, key)
-    
-    #------------------------------------------------------------------------------------------------------------------------------------------------
-    #Implementing a helper function for the search recussive
-    def searchRecursive(self, currentNode: Node, key: int) -> Node:
+                current = current.right
+        return current
 
-        #Implementing a conditional statement to return current node if the current node is none or the current node key equals key
-        if currentNode is None or currentNode.key == key:
-            return currentNode
-        
-        if key < currentNode.key:
-            return self.searchRecursive(currentNode.left, key)
-        
-        else:
-            return self.searchRecursive(currentNode.right, key)
-        
-    #------------------------------------------------------------------------------------------------------------------------------------------------
-    def max(self, node: Node = None) -> Node:
-        #implementing a condition to start from the root if no node is provided
+    def max(self, node: Optional[Node] = None) -> Optional[Node]:
         if node is None:
             node = self.root
-
-        #Implementing a condition to return none is there is no node in the tree
         if node is None:
             return None
         
-        #Implementing a loop that goes round tree and return the max number
         while node.right is not None:
             node = node.right
         
         return node
 
-    def min(self, node: Node = None) -> Node:
-        #implementing a condition to start from the root if no node is provided
+    def min(self, node: Optional[Node] = None) -> Optional[Node]:
         if node is None:
             node = self.root
-
-        #Implementing a condition to return none is there is no node in the tree
         if node is None:
             return None
         
-        #Implementing a loop that goes round tree and return the max number
         while node.left is not None:
             node = node.left
         
         return node
 
-    def inOrderPredecessor(self, key: int) -> Node:
-        
-        #Find the node given the key
+    def inOrderPredecessor(self, key: int) -> Optional[Node]:
+        """
+    Finds the in-order predecessor (node visited before) for a key in the BST.
+
+    1. Search for the target node.
+    2. If not found, return None (no predecessor).
+    3. If the node has a left child:
+       - Predecessor is the rightmost node in the left subtree (max of left subtree).
+    4. Otherwise, traverse parents:
+       - While a parent exists and the current node is its left child:
+          - Move up the parent chain (current node becomes the parent).
+       - If parent becomes None (root reached), there's no predecessor on the right side.
+       - Otherwise, the parent is the predecessor (visited before the current node).
+    """
         node = self.search(key)
         if node is None:
             return None
         
-        #Finding the maximum of the left subtree if it exist
         if node.left is not None:
             return self.max(node.left)
         
-        # if there is no left subtree, proceed to find the nearest parent for which the node is in the right subtree
-        nearestParent = node.parent
-        while nearestParent is not None and node == nearestParent.left:
-            node = nearestParent
-            nearestParent = nearestParent.parent
+        parent = node.parent
+        while parent is not None and node == parent.left:
+            node = parent
+            parent = parent.parent
+        return parent
 
-        return nearestParent
+    def inOrderSuccessor(self, key: int) -> Optional[Node]:
+    #      """
+    # Finds the in-order successor (node visited after) for a key in the BST.
 
-
-    def inOrderSuccessor(self, key: int) -> Node:
-        #Find the node given the key
+    # 1. Search for the target node.
+    # 2. If not found, return None (no successor).
+    # 3. If the node has a right child:
+    #    - Successor is the leftmost node in the right subtree (min of right subtree).
+    # 4. Otherwise, traverse parents:
+    #    - While a parent exists and the current node is its right child:
+    #       - Move up the parent chain (current node becomes the parent).
+    #    - If parent becomes None (root reached), there's no successor on the left side.
+    #    - Otherwise, the parent is the successor (visited after the current node).
+    #     """
+        
         node = self.search(key)
         if node is None:
             return None
         
-        #Finding the minimum of the right subtree if it exist
         if node.right is not None:
-            return self.max(node.right)
+            return self.min(node.right)
         
-        # if there is no left subtree, proceed to find the nearest parent for which the node is in the left subtree
-        nearestParent = node.parent
-        while nearestParent is not None and node == nearestParent.right:
-            node = nearestParent
-            nearestParent = nearestParent.parent
+        parent = node.parent
+        while parent is not None and node == parent.right:
+            node = parent
+            parent = parent.parent
+        return parent
 
-        return nearestParent
+    def preOrderPredecessor(self, key: int) -> Optional[Node]:
+        """
+    Finds the pre-order predecessor (node visited before) for a key in the BST.
 
-    def preOrderPredecessor(self, key: int) -> Node:
-        
-        # Find the node with the given key
+    1. Search for the target node.
+    2. If not found, return None (no predecessor).
+    3. Handle cases based on node's position:
+       - Root: No predecessor in pre-order.
+       - Left child: Parent is the predecessor (visited earlier in pre-order).
+       - Right child: Predecessor is rightmost node in left subtree.
+    """
+        node = self.search(key)
+        if node is None:
+            return None
+
+        parent = node.parent
+        if parent is None:
+            return None
+
+        if parent.left == node:
+            return parent
+
+        if parent.right == node:
+            # Find the rightmost node of the left subtree of the parent
+            sibling = parent.left
+            while sibling.right is not None:
+                sibling = sibling.right
+            return sibling
+
+        return None
+
+
+    def preOrderSuccessor(self, key: int) -> Optional[Node]:
         node = self.search(key)
         if node is None:
             return None
         
-        # If the node has a left child, the predecessor is the rightmost node in the left subtree
-        if node.left is not None:
-            return self.max(node.left)
-    
-        # If the node has no left child, traverse up the tree using parent pointers
-        # Until we find a node that is the right child of its parent, and return the parent
-        ancestor = node.parent
-        while ancestor is not None and node == ancestor.left:
-            node = ancestor
-            ancestor = ancestor.parent
-
-        return ancestor
-
-    def preOrderSuccessor(self, key: int) -> Node:
-         #Find the node which the key is given
-        node =self.search(key)
-        if node is None:
-            return None
-        
-        #if the node has a left child, the left child is the preorder successor
         if node.left is not None:
             return node.left
         
-        #if the node has no left child but has a right child, the right child is the preorder successor
         if node.right is not None:
             return node.right
         
-        #if the node has no children, travel up using parent pointers until we find a node
-        #that is the left child of its parent, and the parent will be the pre-order succesor
-        ancestor = node.parent
-        while ancestor is not None and (ancestor.right is None or node == ancestor.right):
-            node = ancestor
-            ancestor = ancestor.parent
-
-        #if we found such an ancestor, return its right child (if it exist)
-        if ancestor is not None:
-            return ancestor.right
+        parent = node.parent
+        while parent is not None and (node == parent.right or parent.right is None):
+            node = parent
+            parent = parent.parent
         
-        #if we didnt find any ancestor, return none
+        if parent is not None:
+            return parent.right
         return None
 
-    def postOrderPredecessor(self, key: int) -> Node:
-         # Find the node with the given key
-        node = self.search(key)
-        if node is None:
-            return None
-    
-        # If the node is the root or has a left child, there's no postorder predecessor
-        if node == self.root or node.left is not None:
-            return None
-    
-        # If the node is a right child, traverse up the tree using parent pointers
-        # Until we find a node that is the left child of its parent, and return the parent
-        ancestor = node.parent
-        while ancestor is not None and node == ancestor.right:
-            node = ancestor
-            ancestor = ancestor.parent
+    def postOrderPredecessor(self, key: int) -> Optional[Node]:
+        """
+    This method finds a potential neighbor for a node with a specific 'key' 
+    considering a modified tree traversal. It's not a true predecessor 
+    in a strict post-order traversal (left, right, root).
 
-        return ancestor
-
-    def postOrderSuccessor(self, key: int) -> Node:
+    1. Search for the target node and check for children.
+    2. If it has a right child, return the largest node in the right subtree.
+    3. If it has a left child, return the largest node in the left subtree.
+    4. If no children, traverse parents:
+       - If target is left child and parent has left child, no neighbor found.
+       - If target is right child and parent has left child, return parent's left child.
+    5. If no valid neighbor found after parents, return None.
+        """
         node = self.search(key)
         if node is None:
             return None
         
-        #If the node is the root, it has no postorder succesor
-        if node == self.root:
-            return None
+        if node.right:
+            return self.max(node.right)
+        
+        if node.left:
+            return self.max(node.left)
         
         parent = node.parent
-        #if the node is a left child, check the right subtree of the parent or the parent itself
-        if parent is not None and node == parent.left:
-            if parent.right is not None:
-                return self.min(parent.right)
-            else:
-                return parent
+        while parent and (node == parent.left or parent.left is None):
+            node = parent
+            parent = parent.parent
         
-        #If the node is a right child, the parent is the successor
-        if parent is not None and node == parent.right:
+        if parent is None:
+            return None
+        else:
+            return parent.left
+
+    def postOrderSuccessor(self, key: int) -> Optional[Node]:
+        #This code searches a tree for a value and finds the next value that would be
+        # visited if you travelled through the tree left-to-right, then bottom-to-top.
+        node = self.search(key)
+        if node is None:
+            return None
+
+        parent = node.parent
+        if parent is None:
+            return None
+
+        if parent.right == node or parent.right is None:
             return parent
-        
+
+        if parent.left == node:
+            # Find the leftmost node of the right subtree of the parent
+            sibling = parent.right
+            while sibling.left is not None:
+                sibling = sibling.left
+            return sibling
+
         return None
-    
+
